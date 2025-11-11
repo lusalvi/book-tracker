@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Opcional: tipografía/estilos globales */
+body {
+  background-color: #fafaf9;
+}
