@@ -1,1 +1,0 @@
-export const STATUSES = ["to-read", "reading", "read"];
