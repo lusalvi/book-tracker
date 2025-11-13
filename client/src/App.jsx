@@ -16,11 +16,7 @@ function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="p-6 text-sm text-stone-500">
-        Cargando…
-      </div>
-    );
+    return <div className="p-6 text-sm text-stone-500">Cargando…</div>;
   }
 
   return user ? children : <Navigate to="/login" replace />;
@@ -40,6 +36,9 @@ function AppShell() {
     handleAddReview,
   } = useBooks();
 
+  const { user } = useAuth();
+  const name = user?.user_metadata?.full_name || user?.email || "";
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -52,18 +51,53 @@ function AppShell() {
     <div className="min-h-screen w-full bg-stone-50 px-4 py-8 md:px-8">
       <header className="mx-auto mb-6 max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* Título */}
           <h1 className="text-2xl font-bold tracking-tight text-stone-800 md:text-3xl">
             Mi biblioteca
           </h1>
+
+          {/* Saludo + Logout */}
+          {user && (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-stone-700">Hola, {name}</span>
+
+              <button
+                onClick={() => {
+                  // limpiar credenciales del frontend
+                  localStorage.removeItem("book_token");
+                  localStorage.removeItem("book_user");
+                  // redirigir al login
+                  window.location.href = "/login";
+                }}
+                className="flex items-center gap-2 rounded-md border px-3 py-1 text-xs hover:bg-stone-50"
+              >
+                {/* Icono de salida */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10V5m0-2h-1a2 2 0 00-2 2v14a2 2 0 002 2h1"
+                  />
+                </svg>
+                Salir
+              </button>
+            </div>
+          )}
         </div>
+
         <NavTabs page={page} setPage={setPage} />
       </header>
 
       <main className="mx-auto max-w-6xl">
         {page === "home" && <HomePage books={books} onOpen={setOpen} />}
-        {page === "search" && (
-          <SearchPage onAddReading={handleAddReading} />
-        )}
+        {page === "search" && <SearchPage onAddReading={handleAddReading} />}
         {page === "goals" && <GoalsPage books={books} />}
       </main>
 

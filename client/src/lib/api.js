@@ -73,6 +73,14 @@ function authHeaders() {
          BOOKS
 ---------------------------- */
 
+// GET: buscar libros por texto
+export async function apiSearchBooks(query) {
+  return request(`/search?q=${encodeURIComponent(query)}`, {
+    headers: authHeaders(),
+  });
+}
+
+
 // GET: libros del usuario
 export async function apiGetBooks() {
   return request("/books", {

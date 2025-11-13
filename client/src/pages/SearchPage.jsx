@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function SectionHeader({ title, subtitle }) {
   return (
@@ -19,29 +19,25 @@ export default function SearchPage({ onAddReading }) {
   const [selectedBook, setSelectedBook] = useState(null);
   const [totalPages, setTotalPages] = useState("");
 
-  async function searchGoogleBooks() {
-    try {
-      setLoading(true);
-      setError("");
-      const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-          q
-        )}&maxResults=12`
-      );
-      const data = await res.json();
-      setResults(data.items || []);
-    } catch (e) {
-      setError("No se pudo buscar en Google Books");
-    } finally {
-      setLoading(false);
-    }
-  }
+async function searchGoogleBooksAuto(query) {
+  try {
+    setLoading(true);
+    setError("");
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && q) {
-      searchGoogleBooks();
-    }
-  };
+    const res = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+        query
+      )}&maxResults=12`
+    );
+
+    const data = await res.json();
+    setResults(data.items || []);
+  } catch (e) {
+    setError("No se pudo buscar en Google Books");
+  } finally {
+    setLoading(false);
+  }
+}
 
   const handleSelectBook = (book) => {
     setSelectedBook(book);
@@ -62,9 +58,27 @@ export default function SearchPage({ onAddReading }) {
     }
   };
 
-const handleKeyDown = (e) => {
-  if (e.key === "Enter" && q) searchGoogleBooks();
-};
+  const [typingTimeout, setTypingTimeout] = useState(null);
+
+  function handleTyping(e) {
+    const value = e.target.value;
+    setQ(value);
+
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    // Espera 400ms después de dejar de escribir
+    const timeout = setTimeout(() => {
+      if (value.trim().length > 0) {
+        searchGoogleBooksAuto(value);
+      } else {
+        setResults([]);
+      }
+    }, 400);
+
+    setTypingTimeout(timeout);
+  }
 
   return (
     <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow">
@@ -75,18 +89,10 @@ const handleKeyDown = (e) => {
       <div className="mb-6 flex flex-col gap-3 md:flex-row">
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={handleTyping}
           className="w-full rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm shadow-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-900 transition"
           placeholder="Título, autor o ISBN…"
         />
-        <button
-          onClick={searchGoogleBooks}
-          disabled={!q || loading}
-          className="rounded-xl bg-stone-900 px-6 py-3 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed transition whitespace-nowrap"
-        >
-          {loading ? "Buscando…" : "Buscar"}
-        </button>
       </div>
       {error && (
         <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">

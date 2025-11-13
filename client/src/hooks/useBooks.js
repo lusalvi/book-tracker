@@ -5,7 +5,9 @@ import {
   apiGetBooks,
   apiCreateBook,
   apiUpdateBook,
+  apiSearchBooks,
 } from "../lib/api";
+
 
 export function useBooks() {
   const { user } = useAuth();
@@ -153,6 +155,7 @@ export function useBooks() {
     handleUpdateProgress,
     handleAddReview,
     refetch: fetchUserBooks,
+    searchBooks: apiSearchBooks,
   };
 }
 
