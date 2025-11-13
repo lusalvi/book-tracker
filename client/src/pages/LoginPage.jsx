@@ -15,22 +15,14 @@ export default function LoginPage() {
       setLoadingGoogle(true);
 
       const id_token = credentialResponse.credential;
-      await loginWithGoogle(id_token); // habla con tu backend (/auth/login/google)
+      await loginWithGoogle(id_token); // va a /api/auth/login/google
 
-      // redirigís a la home (ruta privada)
       navigate("/");
     } catch (e) {
-      console.error(e);
-      setError(
-        e.message || "Hubo un problema al iniciar sesión con Google."
-      );
+      setError(e.message || "Hubo un problema al iniciar sesión con Google.");
     } finally {
       setLoadingGoogle(false);
     }
-  }
-
-  function handleGoogleError() {
-    setError("No se pudo iniciar sesión con Google.");
   }
 
   return (
@@ -43,7 +35,7 @@ export default function LoginPage() {
         <div className="flex justify-center mb-4">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
+            onError={() => setError("No se pudo iniciar sesión con Google")}
             useOneTap={false}
           />
         </div>

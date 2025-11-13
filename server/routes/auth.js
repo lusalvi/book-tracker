@@ -69,20 +69,34 @@ router.post("/login/google", async (req, res) => {
     return res.status(400).json({ error: "Falta id_token" });
   }
 
-  const { data, error } = await supabase.auth.signInWithIdToken({
-    provider: "google",
-    token: id_token,
-  });
+  try {
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: "google",
+      token: id_token,
+      options: {
+        // Asegura que se cree el usuario si no existe
+        skipNonceCheck: true,
+      },
+    });
 
-  if (error) {
-    return res.status(401).json({ error: error.message });
+    if (error) {
+      console.error("❌ Error de Supabase:", error.message);
+      return res.status(401).json({ error: error.message });
+    }
+
+    if (!data?.session) {
+      return res.status(401).json({ error: "No se pudo crear la sesión" });
+    }
+
+    return res.json({
+      user: data.user,
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+  } catch (e) {
+    console.error("❌ Excepción en login/google:", e);
+    return res.status(500).json({ error: "Error en el servidor" });
   }
-
-  return res.json({
-    user: data.user,
-    access_token: data.session.access_token,
-    refresh_token: data.session.refresh_token,
-  });
 });
 
 
