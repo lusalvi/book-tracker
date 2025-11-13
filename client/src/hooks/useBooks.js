@@ -1,6 +1,11 @@
+// client/src/hooks/useBooks.js
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/api";
 import { useAuth } from "./useAuth";
+import {
+  apiGetBooks,
+  apiCreateBook,
+  apiUpdateBook,
+} from "../lib/api";
 
 export function useBooks() {
   const { user } = useAuth();
@@ -19,49 +24,41 @@ export function useBooks() {
     }
   }, [user]);
 
-  // Función para obtener todos los libros del usuario
+  // Función para obtener todos los libros del usuario (desde el backend)
   async function fetchUserBooks() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("user_books")
-        .select(
-          `
-          *,
-          book:books(*),
-          review:reviews(*)
-        `
-        )
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      const data = await apiGetBooks();
+      // data viene del backend /api/books (user_books + books)
 
-      if (error) throw error;
+      const transformedBooks = data.map((item) => {
+        const book = item.book || {}; // por si viene null
 
-      // Transformar los datos al formato que espera la UI
-      const transformedBooks = data.map((item) => ({
-        id: item.id,
-        bookId: item.book_id,
-        title: item.book.title,
-        author: item.book.author,
-        coverUrl: item.book.cover_url,
-        status: item.status,
-        currentPage: item.current_page,
-        totalPages: item.total_pages || item.book.page_count,
-        progressPercent: item.total_pages
-          ? Math.round((item.current_page / item.total_pages) * 100)
-          : 0,
-        startedAt: item.started_at,
-        finishedAt: item.finished_at,
-        review: item.review?.[0]
-          ? {
-              rating: item.review[0].rating,
-              notes: item.review[0].notes,
-            }
-          : null,
-        // Colores aleatorios basados en el título (puedes mejorar esto)
-        color: randomColor(item.book.title),
-        accent: randomAccent(item.book.title),
-      }));
+        const totalPages =
+          item.total_pages || book.page_count || 0;
+
+        const progressPercent =
+          totalPages > 0
+            ? Math.round((item.current_page / totalPages) * 100)
+            : 0;
+
+        return {
+          id: item.id, // id de user_books
+          bookId: book.id,
+          title: book.title,
+          author: book.author,
+          coverUrl: book.cover_url,
+          status: item.status,
+          currentPage: item.current_page,
+          totalPages,
+          progressPercent,
+          startedAt: item.started_at,
+          finishedAt: item.finished_at,
+          review: null, // más adelante lo conectamos con la tabla reviews
+          color: randomColor(book.title || ""),
+          accent: randomAccent(book.title || ""),
+        };
+      });
 
       setBooks(transformedBooks);
     } catch (error) {
@@ -71,59 +68,28 @@ export function useBooks() {
     }
   }
 
-  // Agregar un libro a la lectura
+  // Agregar un libro a la lectura (usa el backend)
   async function handleAddReading(googleBook) {
     try {
-      // 1. Primero verificar si el libro ya existe en la tabla books
-      let bookId;
-      const { data: existingBook } = await supabase
-        .from("books")
-        .select("id")
-        .eq("google_volume_id", googleBook.id)
-        .single();
+      const volume = googleBook.volumeInfo || {};
 
-      if (existingBook) {
-        bookId = existingBook.id;
-      } else {
-        // 2. Si no existe, crear el libro
-        const { data: newBook, error: bookError } = await supabase
-          .from("books")
-          .insert({
-            google_volume_id: googleBook.id,
-            title: googleBook.volumeInfo.title,
-            author:
-              googleBook.volumeInfo.authors?.join(", ") || "Autor desconocido",
-            cover_url: googleBook.volumeInfo.imageLinks?.thumbnail || null,
-            page_count: googleBook.volumeInfo.pageCount || 0,
-          })
-          .select()
-          .single();
+      const payload = {
+        google_volume_id: googleBook.id,
+        title: volume.title,
+        author: volume.authors?.join(", ") || "Autor desconocido",
+        cover_url: volume.imageLinks?.thumbnail || null,
+        page_count: volume.pageCount || 0,
+        status: "reading",
+        started_at: new Date().toISOString(),
+        current_page: 0,
+        total_pages: volume.pageCount || 0,
+      };
 
-        if (bookError) throw bookError;
-        bookId = newBook.id;
-      }
+      await apiCreateBook(payload);
 
-      // 3. Crear la entrada en user_books
-      const { data: userBook, error: userBookError } = await supabase
-        .from("user_books")
-        .insert({
-          user_id: user.id,
-          book_id: bookId,
-          status: "reading",
-          started_at: new Date().toISOString(),
-          current_page: 0,
-          total_pages: googleBook.volumeInfo.pageCount || 0,
-        })
-        .select()
-        .single();
-
-      if (userBookError) throw userBookError;
-
-      // 4. Recargar los libros
+      // Recargar los libros
       await fetchUserBooks();
       setPage("home");
-
-      return userBook;
     } catch (error) {
       console.error("Error adding book:", error);
       throw error;
@@ -136,28 +102,19 @@ export function useBooks() {
       const book = books.find((b) => b.id === userBookId);
       if (!book) return;
 
-      const newProgress = book.totalPages
-        ? Math.min(100, Math.round((currentPage / book.totalPages) * 100))
-        : 0;
-
-      // Si llegó al 100%, marcar como terminado
       const updates = {
         current_page: currentPage,
       };
 
-      if (currentPage >= book.totalPages && book.totalPages > 0) {
+      if (
+        book.totalPages > 0 &&
+        currentPage >= book.totalPages
+      ) {
         updates.status = "finished";
         updates.finished_at = new Date().toISOString();
       }
 
-      const { error } = await supabase
-        .from("user_books")
-        .update(updates)
-        .eq("id", userBookId);
-
-      if (error) throw error;
-
-      // Recargar los libros
+      await apiUpdateBook(userBookId, updates);
       await fetchUserBooks();
     } catch (error) {
       console.error("Error updating progress:", error);
@@ -166,55 +123,17 @@ export function useBooks() {
   }
 
   // Agregar reseña y finalizar libro
+  // (por ahora solo marcamos como terminado; después podemos
+  // crear rutas específicas en el backend para la tabla reviews)
   async function handleAddReview(userBookId, reviewData) {
     try {
-      const book = books.find((b) => b.id === userBookId);
-      if (!book) return;
+      const updates = {
+        status: "finished",
+        finished_at: new Date().toISOString(),
+        // TODO: guardar rating/notes en backend cuando tengamos /api/reviews
+      };
 
-      // 1. Actualizar el estado del libro a "finished"
-      const { error: updateError } = await supabase
-        .from("user_books")
-        .update({
-          status: "finished",
-          finished_at: new Date().toISOString(),
-        })
-        .eq("id", userBookId);
-
-      if (updateError) throw updateError;
-
-      // 2. Verificar si ya existe una reseña
-      const { data: existingReview } = await supabase
-        .from("reviews")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("book_id", book.bookId)
-        .single();
-
-      if (existingReview) {
-        // Actualizar reseña existente
-        const { error: reviewError } = await supabase
-          .from("reviews")
-          .update({
-            rating: reviewData.rating,
-            notes: reviewData.notes,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingReview.id);
-
-        if (reviewError) throw reviewError;
-      } else {
-        // Crear nueva reseña
-        const { error: reviewError } = await supabase.from("reviews").insert({
-          user_id: user.id,
-          book_id: book.bookId,
-          rating: reviewData.rating,
-          notes: reviewData.notes,
-        });
-
-        if (reviewError) throw reviewError;
-      }
-
-      // 3. Recargar los libros
+      await apiUpdateBook(userBookId, updates);
       await fetchUserBooks();
     } catch (error) {
       console.error("Error adding review:", error);
@@ -237,7 +156,7 @@ export function useBooks() {
   };
 }
 
-// Funciones auxiliares para colores (mejoradas de tus helpers)
+// Funciones auxiliares para colores (las mismas que tenías)
 function randomColor(seedStr = "") {
   let seed = 0;
   for (let i = 0; i < seedStr.length; i++) {
@@ -252,5 +171,5 @@ function randomColor(seedStr = "") {
 
 function randomAccent(seedStr = "") {
   const base = randomColor(seedStr + "accent");
-  return base; // Podrías hacer que sea más oscuro si quieres
+  return base;
 }

@@ -1,33 +1,36 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/api";
+import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../hooks/useAuth";
 
 export default function LoginPage() {
   const [error, setError] = useState("");
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const navigate = useNavigate();
+  const { loginWithGoogle } = useAuth();
 
-  async function handleLoginWithGoogle() {
+  async function handleGoogleSuccess(credentialResponse) {
     try {
       setError("");
       setLoadingGoogle(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: window.location.origin, // vuelve a tu app después del callback
-          queryParams: {
-            // opcional: para refresh token en web
-            access_type: "offline",
-            prompt: "consent",
-          },
-        },
-      });
-      if (error) throw error;
-      // ⚠️ No se ejecuta más allá si se abre el flujo OAuth (redirecciona)
+
+      const id_token = credentialResponse.credential;
+      await loginWithGoogle(id_token); // habla con tu backend (/auth/login/google)
+
+      // redirigís a la home (ruta privada)
+      navigate("/");
     } catch (e) {
-      setError(e.message);
+      console.error(e);
+      setError(
+        e.message || "Hubo un problema al iniciar sesión con Google."
+      );
+    } finally {
       setLoadingGoogle(false);
     }
+  }
+
+  function handleGoogleError() {
+    setError("No se pudo iniciar sesión con Google.");
   }
 
   return (
@@ -37,13 +40,19 @@ export default function LoginPage() {
           Iniciar sesión
         </h2>
 
-        <button
-          onClick={handleLoginWithGoogle}
-          disabled={loadingGoogle}
-          className="mb-4 w-full rounded-lg bg-stone-900 px-4 py-3 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-60"
-        >
-          {loadingGoogle ? "Abriendo Google…" : "Continuar con Google"}
-        </button>
+        <div className="flex justify-center mb-4">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap={false}
+          />
+        </div>
+
+        {loadingGoogle && (
+          <p className="mb-2 text-center text-sm text-stone-500">
+            Conectando con Google…
+          </p>
+        )}
 
         {error && (
           <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm text-rose-700">

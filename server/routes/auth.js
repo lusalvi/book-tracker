@@ -61,4 +61,29 @@ router.post('/login', async (req, res) => {
   });
 });
 
+// POST /api/auth/login/google
+router.post("/login/google", async (req, res) => {
+  const { id_token } = req.body;
+
+  if (!id_token) {
+    return res.status(400).json({ error: "Falta id_token" });
+  }
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: "google",
+    token: id_token,
+  });
+
+  if (error) {
+    return res.status(401).json({ error: error.message });
+  }
+
+  return res.json({
+    user: data.user,
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+});
+
+
 module.exports = router;

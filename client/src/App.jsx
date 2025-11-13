@@ -1,6 +1,6 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "./hooks/useAuth.jsx"; // ← Cambiar a .jsx
+import { useAuth } from "./hooks/useAuth";
 
 import NavTabs from "./components/NavTabs.jsx";
 import DetailPanel from "./components/DetailPanel.jsx";
@@ -14,11 +14,19 @@ import { useBooks } from "./hooks/useBooks.js";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="p-6 text-sm text-stone-500">Cargando…</div>;
+
+  if (loading) {
+    return (
+      <div className="p-6 text-sm text-stone-500">
+        Cargando…
+      </div>
+    );
+  }
+
   return user ? children : <Navigate to="/login" replace />;
 }
 
-/** Shell autenticado: tu UI completa */
+/** Shell autenticado: toda tu UI principal */
 function AppShell() {
   const {
     books,
@@ -53,7 +61,9 @@ function AppShell() {
 
       <main className="mx-auto max-w-6xl">
         {page === "home" && <HomePage books={books} onOpen={setOpen} />}
-        {page === "search" && <SearchPage onAddReading={handleAddReading} />}
+        {page === "search" && (
+          <SearchPage onAddReading={handleAddReading} />
+        )}
         {page === "goals" && <GoalsPage books={books} />}
       </main>
 
@@ -75,7 +85,16 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <AppShell />
+          </PrivateRoute>
+        }
+      />
+      {/* opcional, para redirigir cualquier ruta desconocida */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

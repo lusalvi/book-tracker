@@ -48,6 +48,19 @@ export async function apiRegister({ email, password, nombre }) {
   });
 }
 
+export async function apiLoginWithGoogle(id_token) {
+  const data = await request("/auth/login/google", {
+    method: "POST",
+    body: JSON.stringify({ id_token }),
+  });
+
+  localStorage.setItem("book_token", data.access_token);
+  localStorage.setItem("book_user", JSON.stringify(data.user));
+
+  return data.user;
+}
+
+
 /* ---------------------------
    Helper para auth headers
 ---------------------------- */
