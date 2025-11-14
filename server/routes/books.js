@@ -4,6 +4,9 @@ const router = express.Router();
 const { supabase } = require('../config/supabase');
 const auth = require('../middleware/auth');
 
+// Necesario para que req.body tenga el JSON del frontend
+router.use(express.json());
+
 // Todas las rutas requieren estar logueado
 router.use(auth);
 
@@ -108,7 +111,7 @@ router.post('/', async (req, res) => {
     finished_at = null,
     current_page = 0,
     total_pages = null,
-  } = req.body;
+  } = req.body || {};
 
   if (!title) {
     return res.status(400).json({ error: 'El título es obligatorio' });

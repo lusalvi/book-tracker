@@ -70,26 +70,32 @@ export function useBooks() {
     }
   }
 
-  // Agregar un libro a la lectura (usa el backend)
   async function handleAddReading(googleBook) {
     try {
       const volume = googleBook.volumeInfo || {};
 
+      const rawTitle = volume.title || googleBook.title || "";
+
       const payload = {
         google_volume_id: googleBook.id,
-        title: volume.title,
-        author: volume.authors?.join(", ") || "Autor desconocido",
+        title: rawTitle,
+        author:
+          volume.authors?.join(", ") ||
+          googleBook.author ||
+          "Autor desconocido",
         cover_url: volume.imageLinks?.thumbnail || null,
-        page_count: volume.pageCount || 0,
+        page_count: volume.pageCount || googleBook.pageCount || 0,
         status: "reading",
         started_at: new Date().toISOString(),
         current_page: 0,
-        total_pages: volume.pageCount || 0,
+        total_pages: volume.pageCount || googleBook.totalPages || 0,
       };
 
-      await apiCreateBook(payload);
+      if (!payload.title) {
+        throw new Error("El libro no tiene título, no se puede guardar.");
+      }
 
-      // Recargar los libros
+      await apiCreateBook(payload);
       await fetchUserBooks();
       setPage("home");
     } catch (error) {
