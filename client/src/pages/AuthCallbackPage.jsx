@@ -9,56 +9,52 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     async function handleCallback() {
       try {
-        // Extraer parámetros del hash (#access_token=...)
-        const hashParams = new URLSearchParams(
-          window.location.hash.substring(1)
-        );
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-
-        // Extraer parámetros de la query (?token_hash=...&type=signup)
+        // Extraer todos los parámetros posibles
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const searchParams = new URLSearchParams(window.location.search);
-        const tokenHash = searchParams.get("token_hash");
-        const type = searchParams.get("type");
-
-        console.log("🔍 Parámetros recibidos:", {
-          accessToken: accessToken ? "Sí" : "No",
-          refreshToken: refreshToken ? "Sí" : "No",
-          tokenHash: tokenHash ? "Sí" : "No",
-          type,
+        
+        // Opción 1: access_token en hash (después de verificación exitosa)
+        let accessToken = hashParams.get("access_token");
+        let refreshToken = hashParams.get("refresh_token");
+        
+        // Opción 2: token_hash en query (link del email)
+        let tokenHash = searchParams.get("token_hash");
+        let type = searchParams.get("type");
+        
+        console.log('🔍 Parámetros recibidos:', {
+          accessToken: accessToken ? 'Sí ✅' : 'No ❌',
+          refreshToken: refreshToken ? 'Sí ✅' : 'No ❌',
+          tokenHash: tokenHash ? 'Sí ✅' : 'No ❌',
+          type: type || 'ninguno'
         });
 
-        // Caso 1: Tenemos access_token directamente (formato antiguo)
+        // CASO 1: Ya tenemos el access_token (Supabase ya hizo la verificación)
         if (accessToken) {
+          console.log('✅ Token encontrado, guardando y redirigiendo...');
           localStorage.setItem("book_token", accessToken);
           if (refreshToken) {
             localStorage.setItem("book_refresh_token", refreshToken);
           }
-          console.log("✅ Token guardado, redirigiendo...");
           navigate("/", { replace: true });
           return;
         }
 
-        // Caso 2: Tenemos token_hash (formato nuevo de Supabase)
+        // CASO 2: Tenemos token_hash, necesitamos verificarlo
         if (tokenHash && type) {
-          console.log("🔄 Verificando email con token_hash...");
-          await apiVerifyEmail(tokenHash, type);
-          console.log("✅ Email verificado, redirigiendo...");
+          console.log('🔄 Verificando email con backend...');
+          const data = await apiVerifyEmail(tokenHash, type);
+          console.log('✅ Email verificado exitosamente');
           navigate("/", { replace: true });
           return;
         }
 
-        // Si llegamos aquí, no hay parámetros válidos
-        console.warn(
-          "No se encontraron parámetros de autenticación en la URL. " +
-            "Probablemente Supabase ya verificó el email y solo hizo el redirect limpio."
-        );
+        // CASO 3: No hay parámetros - posible error
+        console.warn('⚠️ No se encontraron parámetros de autenticación');
+        throw new Error('No se pudieron obtener los datos de verificación');
 
-        // Podés llevar al usuario al login con un mensajito
-        navigate("/login", { replace: true });
       } catch (err) {
-        console.error("❌ Error en callback:", err);
-        setError(err.message || "Error desconocido");
+        console.error('❌ Error en callback:', err);
+        setError(err.message || 'Error al verificar el email');
       }
     }
 
@@ -91,6 +87,7 @@ export default function AuthCallbackPage() {
           Verificando tu email...
         </div>
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 mx-auto"></div>
+        <p className="mt-4 text-sm text-gray-500">Verificando tu...</p>
       </div>
     </div>
   );
