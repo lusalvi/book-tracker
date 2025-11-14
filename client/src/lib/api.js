@@ -41,10 +41,10 @@ export async function apiLogin({ email, password }) {
   return data;
 }
 
-export async function apiRegister({ email, password, nombre }) {
+export async function apiRegister({ email, password, nombre, apellido }) {
   return request("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email, password, nombre }),
+    body: JSON.stringify({ email, password, nombre, apellido }),
   });
 }
 
@@ -60,7 +60,6 @@ export async function apiLoginWithGoogle(id_token) {
   return data.user;
 }
 
-// Agregar esta función al final del archivo, antes de BOOKS
 export async function apiVerifyEmail(token_hash, type) {
   const data = await request("/auth/verify-email", {
     method: "POST",

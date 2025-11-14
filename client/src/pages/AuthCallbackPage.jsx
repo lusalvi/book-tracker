@@ -87,7 +87,7 @@ export default function AuthCallbackPage() {
           Verificando tu email...
         </div>
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600 mx-auto"></div>
-        <p className="mt-4 text-sm text-gray-500">Verificando tu...</p>
+        <p className="mt-4 text-sm text-gray-500">Por favor espera...</p>
       </div>
     </div>
   );

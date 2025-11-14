@@ -39,7 +39,13 @@ function AppShell() {
   } = useBooks();
 
   const { user } = useAuth();
-  const name = user?.user_metadata?.full_name || user?.email || "";
+  const displayName = 
+    user?.user_metadata?.full_name || 
+    (user?.user_metadata?.nombre && user?.user_metadata?.apellido 
+      ? `${user.user_metadata.nombre} ${user.user_metadata.apellido}` 
+      : user?.user_metadata?.nombre) ||
+    user?.email?.split('@')[0] || 
+    "Usuario";
 
   if (loading) {
     return (
@@ -61,7 +67,7 @@ function AppShell() {
           {/* Saludo + Logout */}
           {user && (
             <div className="flex items-center gap-4">
-              <span className="text-sm text-stone-700">Hola, {name}</span>
+              <span className="text-sm text-stone-700">Hola, {displayName}</span>
 
               <button
                 onClick={() => {

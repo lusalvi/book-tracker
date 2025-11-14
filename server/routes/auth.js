@@ -3,12 +3,49 @@ const express = require("express");
 const router = express.Router();
 const { supabase } = require("../config/supabase");
 
+/* HELPER */
+// Helper para asegurar que el perfil en public.profiles esté creado/actualizado
+async function ensureProfileForUser(user, extra = {}) {
+  if (!user) return;
+
+  const { nombre, apellido } = extra;
+
+  const fullNameFromProvider =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    "";
+
+  let firstName = nombre || "";
+  let lastName = apellido || "";
+
+  // Si no me mandaron nombre/apellido desde el front, uso el display name del proveedor
+  if ((!firstName || !lastName) && fullNameFromProvider) {
+    const parts = fullNameFromProvider.trim().split(/\s+/);
+    if (!firstName) firstName = parts[0]; 
+    if (!lastName && parts.length > 1) {
+      lastName = parts.slice(1).join(" "); 
+    }
+  }
+
+  // Último fallback: parte local del email
+  const emailLocal = user.email?.split("@")[0] ?? "";
+  if (!firstName) firstName = emailLocal;
+
+  await supabase.from("profiles").upsert({
+    id: user.id,
+    first_name: firstName,
+    last_name: lastName || "",
+  });
+}
+
+
 /**
  * POST /api/auth/register
- * body: { email, password, nombre? }
+ * body: { email, password, nombre, apellido }
  */
+
 router.post("/register", async (req, res) => {
-  const { email, password, nombre } = req.body;
+  const { email, password, nombre, apellido } = req.body;
 
   if (!email || !password) {
     return res
@@ -20,13 +57,25 @@ router.post("/register", async (req, res) => {
     email,
     password,
     options: {
-      data: { nombre },
+      data: {
+        nombre: nombre || email.split("@")[0],
+        apellido: apellido || "",
+        full_name: `${nombre || ""} ${apellido || ""}`.trim(),
+      },
       emailRedirectTo: "http://localhost:5173/auth/callback",
     },
   });
 
   if (error) {
     return res.status(400).json({ error: error.message });
+  }
+
+  const user = data.user;
+
+  try {
+    await ensureProfileForUser(user, { nombre, apellido });
+  } catch (e) {
+    console.error("❌ Error creando perfil:", e);
   }
 
   return res.status(201).json({

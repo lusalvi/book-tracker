@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loadingEmail, setLoadingEmail] = useState(false);
@@ -50,10 +51,14 @@ export default function LoginPage() {
     try {
       setError("");
       setLoadingEmail(true);
-      await register({ email, password, nombre });
-      // Después de registrarse, hacer login automáticamente
-      await login({ email, password });
-      navigate("/");
+      const result = await register({ email, password, nombre, apellido });
+      if (result.message) {
+        alert("¡Cuenta creada! Revisa tu email para confirmarla.");
+        setActiveTab("login");
+      } else {
+        await login({ email, password });
+        navigate("/");
+      }
     } catch (e) {
       setError(e.message || "Error al crear la cuenta.");
     } finally {
@@ -67,6 +72,7 @@ export default function LoginPage() {
     setEmail("");
     setPassword("");
     setNombre("");
+    setApellido("");
   }
 
   return (
@@ -230,6 +236,25 @@ export default function LoginPage() {
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 placeholder="Ingresa tu nombre"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-20"
+                required
+                disabled={loadingEmail}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="apellido"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Apellido
+              </label>
+              <input
+                id="apellido"
+                type="text"
+                value={apellido}
+                onChange={(e) => setApellido(e.target.value)}
+                placeholder="Ingresa tu apellido"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-20"
                 required
                 disabled={loadingEmail}
