@@ -60,7 +60,26 @@ export async function apiLoginWithGoogle(id_token) {
   return data.user;
 }
 
+// Agregar esta función al final del archivo, antes de BOOKS
+export async function apiVerifyEmail(token_hash, type) {
+  const data = await request("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token_hash, type }),
+  });
 
+  // Guardar tokens
+  if (data.access_token) {
+    localStorage.setItem("book_token", data.access_token);
+  }
+  if (data.refresh_token) {
+    localStorage.setItem("book_refresh_token", data.refresh_token);
+  }
+  if (data.user) {
+    localStorage.setItem("book_user", JSON.stringify(data.user));
+  }
+
+  return data;
+}
 /* ---------------------------
    Helper para auth headers
 ---------------------------- */

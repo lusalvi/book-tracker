@@ -1,24 +1,27 @@
 // server/routes/auth.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { supabase } = require('../config/supabase');
+const { supabase } = require("../config/supabase");
 
 /**
  * POST /api/auth/register
  * body: { email, password, nombre? }
  */
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
   const { email, password, nombre } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email y password son obligatorios' });
+    return res
+      .status(400)
+      .json({ error: "Email y contraseña son obligatorios" });
   }
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { nombre }, // metadata opcional
+      data: { nombre },
+      emailRedirectTo: "http://localhost:5173/auth/callback",
     },
   });
 
@@ -28,20 +31,56 @@ router.post('/register', async (req, res) => {
 
   return res.status(201).json({
     user: data.user,
-    // Si tenés confirmación por mail, capaz no querés devolver el session
     session: data.session,
+    message: "Revisa tu email para confirmar tu cuenta",
   });
+});
+
+// POST /api/auth/verify-email
+router.post("/verify-email", async (req, res) => {
+  const { token_hash, type } = req.body;
+
+  if (!token_hash || !type) {
+    return res.status(400).json({ error: "Faltan parámetros" });
+  }
+
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash,
+      type: type,
+    });
+
+    if (error) {
+      console.error("❌ Error verificando email:", error.message);
+      return res.status(401).json({ error: error.message });
+    }
+
+    if (!data?.session) {
+      return res.status(401).json({ error: "No se pudo crear la sesión" });
+    }
+
+    return res.json({
+      user: data.user,
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+  } catch (e) {
+    console.error("❌ Excepción en verify-email:", e);
+    return res.status(500).json({ error: "Error en el servidor" });
+  }
 });
 
 /**
  * POST /api/auth/login
  * body: { email, password }
  */
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email y password son obligatorios' });
+    return res
+      .status(400)
+      .json({ error: "Email y contraseña son obligatorios" });
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({

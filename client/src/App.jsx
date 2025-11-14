@@ -12,6 +12,8 @@ import LoginPage from "./pages/LoginPage.jsx";
 
 import { useBooks } from "./hooks/useBooks.js";
 
+import AuthCallbackPage from './pages/AuthCallbackPage';
+
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
 
@@ -119,6 +121,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route
         path="/"
         element={
