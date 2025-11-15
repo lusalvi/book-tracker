@@ -6,20 +6,30 @@ const API_URL = import.meta.env.VITE_API_URL;
    Helper base para requests
 ---------------------------- */
 async function request(path, options = {}) {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
+  const url = `${API_URL}${path}`;
+  console.log("request:", url, options);
+
+  // 1) Mezclamos headers SIN pisar el Content-Type
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  // 2) Armamos el fetch poniendo primero ...options y luego headers ya fusionados
+  const res = await fetch(url, {
     ...options,
+    headers,
   });
 
   let data = {};
   try {
     data = await res.json();
-  } catch { /* empty */ }
+  } catch {
+    /* empty */
+  }
 
   if (!res.ok) {
+    console.error("❌ Error en la API:", res.status, data);
     throw new Error(data.error || "Error en la API");
   }
 
@@ -54,7 +64,12 @@ export async function apiLoginWithGoogle(id_token) {
     body: JSON.stringify({ id_token }),
   });
 
-  localStorage.setItem("book_token", data.access_token);
+  if (data.access_token) {
+    localStorage.setItem("book_token", data.access_token);
+  } else {
+    console.error("❌ No vino access_token desde login/google:", data);
+  }
+
   localStorage.setItem("book_user", JSON.stringify(data.user));
 
   return data.user;
@@ -97,7 +112,6 @@ export async function apiSearchBooks(query) {
     headers: authHeaders(),
   });
 }
-
 
 // GET: libros del usuario
 export async function apiGetBooks() {

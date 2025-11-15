@@ -8,7 +8,6 @@ import {
   apiSearchBooks,
 } from "../lib/api";
 
-
 export function useBooks() {
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
@@ -26,18 +25,16 @@ export function useBooks() {
     }
   }, [user]);
 
-  // Función para obtener todos los libros del usuario (desde el backend)
+  // Obtener todos los libros del usuario desde el backend
   async function fetchUserBooks() {
     try {
       setLoading(true);
       const data = await apiGetBooks();
-      // data viene del backend /api/books (user_books + books)
 
       const transformedBooks = data.map((item) => {
-        const book = item.book || {}; // por si viene null
+        const book = item.book || {};
 
-        const totalPages =
-          item.total_pages || book.page_count || 0;
+        const totalPages = item.total_pages || book.page_count || 0;
 
         const progressPercent =
           totalPages > 0
@@ -56,7 +53,7 @@ export function useBooks() {
           progressPercent,
           startedAt: item.started_at,
           finishedAt: item.finished_at,
-          review: null, // más adelante lo conectamos con la tabla reviews
+          review: null, // más adelante conectamos con reviews
           color: randomColor(book.title || ""),
           accent: randomAccent(book.title || ""),
         };
@@ -70,36 +67,51 @@ export function useBooks() {
     }
   }
 
+  // 👉 Agregar libro desde Google Books como "en lectura"
   async function handleAddReading(googleBook) {
     try {
+      console.log("handleAddReading - libro elegido:", googleBook);
+
+      // MUY IMPORTANTE: Google Books usa volumeInfo, no volume_info
       const volume = googleBook.volumeInfo || {};
 
-      const rawTitle = volume.title || googleBook.title || "";
+      let title = "";
+      if (typeof volume.title === "string" && volume.title.trim()) {
+        title = volume.title.trim();
+      } else if (
+        typeof googleBook.title === "string" &&
+        googleBook.title.trim()
+      ) {
+        title = googleBook.title.trim();
+      }
+
+      // pageCount como número o null
+      const pageCountRaw = volume.pageCount ?? googleBook.pageCount ?? null;
+      const pageCount =
+        pageCountRaw && !Number.isNaN(Number(pageCountRaw))
+          ? Number(pageCountRaw)
+          : null;
 
       const payload = {
         google_volume_id: googleBook.id,
-        title: rawTitle,
+        title, // si está vacío, el backend lo reemplaza por "Sin título"
         author:
-          volume.authors?.join(", ") ||
+          (Array.isArray(volume.authors) && volume.authors[0]) ||
           googleBook.author ||
           "Autor desconocido",
         cover_url: volume.imageLinks?.thumbnail || null,
-        page_count: volume.pageCount || googleBook.pageCount || 0,
-        status: "reading",
-        started_at: new Date().toISOString(),
-        current_page: 0,
-        total_pages: volume.pageCount || googleBook.totalPages || 0,
+        page_count: pageCount,
+        // status/fechas/progreso los maneja el backend
       };
 
-      if (!payload.title) {
-        throw new Error("El libro no tiene título, no se puede guardar.");
-      }
+      console.log("📦 Payload para POST /books:", payload);
 
       await apiCreateBook(payload);
       await fetchUserBooks();
       setPage("home");
     } catch (error) {
-      console.error("Error adding book:", error);
+      console.error("❌ Error adding book:", error);
+      alert(error.message || "No se pudo agregar el libro. Mirá la consola.");
       throw error;
     }
   }
@@ -114,10 +126,7 @@ export function useBooks() {
         current_page: currentPage,
       };
 
-      if (
-        book.totalPages > 0 &&
-        currentPage >= book.totalPages
-      ) {
+      if (book.totalPages > 0 && currentPage >= book.totalPages) {
         updates.status = "finished";
         updates.finished_at = new Date().toISOString();
       }
@@ -130,15 +139,13 @@ export function useBooks() {
     }
   }
 
-  // Agregar reseña y finalizar libro
-  // (por ahora solo marcamos como terminado; después podemos
-  // crear rutas específicas en el backend para la tabla reviews)
+  // Marcar libro como terminado (luego conectamos con reviews)
   async function handleAddReview(userBookId, reviewData) {
     try {
       const updates = {
         status: "finished",
         finished_at: new Date().toISOString(),
-        // TODO: guardar rating/notes en backend cuando tengamos /api/reviews
+        // TODO: guardar rating/notes cuando tengamos /api/reviews
       };
 
       await apiUpdateBook(userBookId, updates);
@@ -165,7 +172,7 @@ export function useBooks() {
   };
 }
 
-// Funciones auxiliares para colores (las mismas que tenías)
+// Funciones auxiliares para colores
 function randomColor(seedStr = "") {
   let seed = 0;
   for (let i = 0; i < seedStr.length; i++) {
