@@ -156,6 +156,26 @@ export function useBooks() {
     }
   }
 
+  // Libros en curso (status = "reading")
+  const readingBooks = books
+    .filter((b) => b.status === "reading")
+    .sort(
+      (a, b) =>
+        new Date(b.startedAt || b.started_at || 0) -
+        new Date(a.startedAt || a.started_at || 0)
+    );
+
+  // Última lectura en proceso (el más reciente)
+  const currentReading = readingBooks[0] || null;
+  //  Cuando cambian los libros, actualizamos también el libro abierto en el panel
+  useEffect(() => {
+    if (!open) return;
+    const updated = books.find((b) => b.id === open.id);
+    if (updated && updated !== open) {
+      setOpen(updated);
+    }
+  }, [books, open]);
+
   return {
     books,
     setBooks,
@@ -169,6 +189,8 @@ export function useBooks() {
     handleAddReview,
     refetch: fetchUserBooks,
     searchBooks: apiSearchBooks,
+    readingBooks,
+    currentReading,
   };
 }
 
