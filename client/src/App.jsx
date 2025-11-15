@@ -117,7 +117,7 @@ function AppShell() {
       />
 
       <footer className="mx-auto mt-10 max-w-6xl text-center text-xs text-stone-400">
-        v4.0 • React + Tailwind + Supabase ✨
+        EGI Programacion Web
       </footer>
     </div>
   );

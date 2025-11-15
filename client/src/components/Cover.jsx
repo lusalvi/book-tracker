@@ -5,7 +5,7 @@ export default function Cover({ title, coverUrl, cover_url, book }) {
   const finalCoverUrl =
     coverUrl || cover_url || book?.cover_url || book?.coverUrl || null;
 
-  // 💿 Si hay URL, mostramos imagen
+  // Si hay URL, mostramos imagen
   if (finalCoverUrl) {
     return (
       <div className="flex aspect-[2/3] w-24 overflow-hidden rounded border shadow">
@@ -18,7 +18,7 @@ export default function Cover({ title, coverUrl, cover_url, book }) {
     );
   }
 
-  // 🎨 Fallback: lo que ya tenías (color + iniciales)
+  // Si el libro no cuenta con portada, se toma por defecto lo siguiente
   const bg = randomColor(title);
   const initials = title
     .split(' ')

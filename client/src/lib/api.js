@@ -145,3 +145,30 @@ export async function apiDeleteBook(id) {
     headers: authHeaders(),
   });
 }
+/* ---------------------------
+         GOALS
+---------------------------- */
+
+// GET: metas anual + mensual
+export async function apiGetGoals({ year, month }) {
+  const params = new URLSearchParams({ year: String(year) });
+  if (month) params.append("month", String(month));
+
+  return request(`/goals?${params.toString()}`, {
+    headers: authHeaders(),
+  });
+}
+
+// PUT: guardar metas
+export async function apiUpdateGoals({ year, month, annualTarget, monthlyTarget }) {
+  return request(`/goals`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      year,
+      month,
+      annualTarget,
+      monthlyTarget,
+    }),
+  });
+}

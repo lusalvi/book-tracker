@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const bookRoutes = require('./routes/books');
+const goalsRoutes = require('./routes/goals');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -12,7 +13,7 @@ const PORT = process.env.PORT || 4000;
 app.use(
   cors({
     origin: 'http://localhost:5173',
-    credentials: false, // true si usás cookies
+    credentials: true, // true si usás cookies
   })
 );
 
@@ -24,6 +25,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
+app.use('/api/goals', goalsRoutes);
 
 app.listen(PORT, () => {
   console.log(`✅ Server escuchando en http://localhost:${PORT}`);
