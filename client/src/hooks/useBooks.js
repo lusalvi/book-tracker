@@ -132,40 +132,41 @@ export function useBooks() {
     }
   }
 
-async function handleUpdateProgress(userBookId, currentPage) {
-  try {
-    const book = books.find((b) => b.id === userBookId);
-    if (!book) return;
+  async function handleUpdateProgress(userBookId, currentPage, totalPagesOverride) {
+    try {
+      const book = books.find((b) => b.id === userBookId);
+      if (!book) return;
 
-    const total = book.totalPages || 0;
-    const clampedPage =
-      total > 0 ? Math.min(Math.max(currentPage, 0), total) : currentPage;
+      // Si desde el modal nos mandan un total de páginas > 0, usamos ese.
+      // Si no, usamos el que ya teníamos.
+      const total =
+        typeof totalPagesOverride === "number" && totalPagesOverride > 0
+          ? totalPagesOverride
+          : book.totalPages || 0;
 
-    // actualizar en Supabase
-    await apiUpdateBook(userBookId, {
-      current_page: clampedPage,
-    });
+      const updates = {
+        current_page: currentPage,
+      };
 
-    // actualizar en memoria para que se vea al instante
-    setBooks((prev) =>
-      prev.map((b) => {
-        if (b.id !== userBookId) return b;
-        const t = b.totalPages || 0;
-        const progressPercent =
-          t > 0 ? Math.round((clampedPage / t) * 100) : 0;
+      if (total > 0) {
+        updates.total_pages = total;
 
-        return {
-          ...b,
-          currentPage: clampedPage,
-          progressPercent,
-        };
-      })
-    );
-  } catch (error) {
-    console.error("Error updating progress:", error);
-    throw error;
+        // Si llegamos al final, marcar como terminado
+        if (currentPage >= total) {
+          updates.status = "finished";
+          updates.finished_at = new Date().toISOString();
+        }
+      }
+
+      await apiUpdateBook(userBookId, updates);
+      await fetchUserBooks();
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      throw error;
+    }
   }
-}
+
+
   // Agregar reseña (rating + notes) a un libro completado
   async function handleAddReview(userBookId, reviewData) {
     try {

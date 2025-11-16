@@ -12,6 +12,7 @@ export default function DetailPanel({
 
   // Estado local
   const [currentPage, setCurrentPage] = useState(book.currentPage || 0);
+  const [totalPages, setTotalPages] = useState(book.totalPages || 0);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewRating, setReviewRating] = useState(book.rating || 0);
   const [reviewNotes, setReviewNotes] = useState(book.notes || "");
@@ -19,6 +20,7 @@ export default function DetailPanel({
   // Cada vez que cambia de libro, reseteamos todo
   useEffect(() => {
     setCurrentPage(book.currentPage || 0);
+    setTotalPages(book.totalPages || 0);
     setIsReviewing(false);
     setReviewRating(book.rating || 0);
     setReviewNotes(book.notes || "");
@@ -28,18 +30,21 @@ export default function DetailPanel({
   const isReading = book.status === "reading";
   const isRead = book.status === "read";
 
-  const progressPercent = book.totalPages
-    ? Math.min(100, Math.round((currentPage / book.totalPages) * 100))
+  const progressPercent = totalPages
+    ? Math.min(100, Math.round((currentPage / totalPages) * 100))
     : 0;
 
   const isComplete = progressPercent >= 100;
 
   const handleUpdateProgress = () => {
-    if (currentPage >= 0 && currentPage <= (book.totalPages || 0)) {
-      onUpdateProgress && onUpdateProgress(book.id, currentPage);
+    const safeTotal = totalPages && totalPages > 0 ? totalPages : null;
 
-      // si llego o paso la última página, abrimos reseña
-      if (book.totalPages && currentPage >= book.totalPages) {
+    // Si hay total, validamos contra eso; si no, solo que sea >= 0
+    if (currentPage >= 0 && (!safeTotal || currentPage <= safeTotal)) {
+      onUpdateProgress && onUpdateProgress(book.id, currentPage, safeTotal);
+
+      // Si hay total y llegamos al final, abrir reseña
+      if (safeTotal && currentPage >= safeTotal) {
         setIsReviewing(true);
       }
     }
@@ -134,29 +139,60 @@ export default function DetailPanel({
         </div>
 
         {/* 🔹 MODAL DE ACTUALIZAR PROGRESO (el que querías) */}
-        {isReading && book.totalPages && (
+        {isReading && (
           <div className="mb-4 rounded-lg border border-stone-200 bg-stone-50 p-4">
             <h3 className="mb-3 text-sm font-semibold text-gray-700">
               Progreso de lectura
             </h3>
             <div className="space-y-3">
+              {/* Texto de páginas */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-stone-600">Páginas</span>
                 <span className="font-medium text-stone-800">
-                  {currentPage} / {book.totalPages}
+                  {totalPages
+                    ? `${currentPage} / ${totalPages}`
+                    : `${currentPage} páginas`}
                 </span>
               </div>
+
+              {/* Barra */}
               <ProgressBar value={progressPercent} />
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max={book.totalPages}
-                  value={currentPage}
-                  onChange={(e) => setCurrentPage(Number(e.target.value))}
-                  className="w-24 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
-                  placeholder="Página"
-                />
+
+              {/* Inputs */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Página actual */}
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-stone-600">
+                    Página actual
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={totalPages || undefined}
+                    value={currentPage}
+                    onChange={(e) =>
+                      setCurrentPage(Number(e.target.value) || 0)
+                    }
+                    className="w-24 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    placeholder="Página"
+                  />
+                </div>
+
+                {/* Total de páginas (editable) */}
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-stone-600">
+                    Total páginas
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={totalPages || ""}
+                    onChange={(e) => setTotalPages(Number(e.target.value) || 0)}
+                    className="w-24 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
+                    placeholder="Ej: 350"
+                  />
+                </div>
+
                 <button
                   onClick={handleUpdateProgress}
                   className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 transition"
