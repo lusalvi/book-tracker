@@ -5,6 +5,8 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const bookRoutes = require('./routes/books');
 const goalsRoutes = require('./routes/goals');
+const reviewsRoutes = require("./routes/reviews");
+
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -26,6 +28,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/goals', goalsRoutes);
+app.use("/api/reviews", reviewsRoutes);
 
 app.listen(PORT, () => {
   console.log(`✅ Server escuchando en http://localhost:${PORT}`);

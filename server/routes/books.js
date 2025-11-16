@@ -10,43 +10,45 @@ router.use(express.json());
 // Todas las rutas requieren estar logueado
 router.use(auth);
 
-/**
- * GET /api/books
- * Devuelve los libros del usuario (user_books + books)
- */
+// GET /api/books
 router.get("/", async (req, res) => {
   const userId = req.user.id;
 
-  const { data, error } = await supabase
-    .from("user_books")
-    .select(
-      `
-      id,
-      status,
-      started_at,
-      finished_at,
-      current_page,
-      total_pages,
-      created_at,
-      book:books (
+  try {
+    const { data, error } = await supabase
+      .from("user_books")
+      .select(
+        `
         id,
-        google_volume_id,
-        title,
-        author,
-        cover_url,
-        page_count
+        status,
+        started_at,
+        finished_at,
+        current_page,
+        total_pages,
+        created_at,
+        book:books (
+          id,
+          google_volume_id,
+          title,
+          author,
+          cover_url,
+          page_count
+        )
+      `
       )
-    `
-    )
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("❌ Error GET /books:", error);
-    return res.status(500).json({ error: error.message });
+    if (error) {
+      console.error("❌ Error GET /books:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json(data);
+  } catch (err) {
+    console.error("❌ Error general GET /books:", err);
+    return res.status(500).json({ error: "Error interno" });
   }
-
-  res.json(data);
 });
 
 /**
@@ -228,6 +230,83 @@ router.delete("/:id", async (req, res) => {
   }
 
   res.status(204).send();
+});
+
+/**
+ * POST /api/books/:id/complete
+ * Marca el libro como leído + guarda reseña
+ * Body: { rating: number 1-5, notes?: string }
+ */
+router.post("/:id/complete", async (req, res) => {
+  const userId = req.user.id;
+  const userBookId = Number(req.params.id);
+  const { rating, notes } = req.body || {};
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: "Rating inválido" });
+  }
+
+  try {
+    // 1) Buscar el registro en user_books para este usuario
+    const { data: userBook, error: userBookError } = await supabase
+      .from("user_books")
+      .select("id, book_id, total_pages")
+      .eq("id", userBookId)
+      .eq("user_id", userId)
+      .single();
+
+    if (userBookError || !userBook) {
+      console.error("❌ Error buscando user_book:", userBookError);
+      return res
+        .status(404)
+        .json({ error: "Libro no encontrado para este usuario" });
+    }
+
+    const finishedAt = new Date().toISOString();
+
+    // 2) Marcar como leído en user_books
+    const { error: updateError } = await supabase
+      .from("user_books")
+      .update({
+        status: "read",          // 👈 estado final que van a usar metas y estanterías
+        finished_at: finishedAt, // fecha de finalización
+        current_page: userBook.total_pages, // lo dejamos al 100%
+      })
+      .eq("id", userBookId)
+      .eq("user_id", userId);
+
+    if (updateError) {
+      console.error("❌ Error marcando como leído:", updateError);
+      return res.status(500).json({ error: "No se pudo marcar como leído" });
+    }
+
+    // 3) Insertar o actualizar reseña en reviews (una por user + book)
+    const { error: reviewError } = await supabase
+      .from("reviews")
+      .upsert(
+        {
+          user_id: userId,
+          book_id: userBook.book_id,
+          rating,
+          notes: notes || null,
+        },
+        {
+          onConflict: "user_id,book_id", // 👈 usa tu índice único
+        }
+      );
+
+    if (reviewError) {
+      console.error("❌ Error insertando reseña:", reviewError);
+      return res.status(500).json({ error: "No se pudo guardar la reseña" });
+    }
+
+    return res.json({
+      message: "Libro completado con reseña",
+    });
+  } catch (err) {
+    console.error("❌ Error POST /books/:id/complete:", err);
+    return res.status(500).json({ error: "Error interno" });
+  }
 });
 
 module.exports = router;

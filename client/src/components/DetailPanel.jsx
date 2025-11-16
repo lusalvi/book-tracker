@@ -10,38 +10,48 @@ export default function DetailPanel({
 }) {
   if (!book) return null;
 
+  // Estado local
   const [currentPage, setCurrentPage] = useState(book.currentPage || 0);
   const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewNotes, setReviewNotes] = useState("");
+  const [reviewRating, setReviewRating] = useState(book.rating || 0);
+  const [reviewNotes, setReviewNotes] = useState(book.notes || "");
 
+  // Cada vez que cambia de libro, reseteamos todo
   useEffect(() => {
     setCurrentPage(book.currentPage || 0);
     setIsReviewing(false);
-    setReviewRating(book.review?.rating || 0);
-    setReviewNotes(book.review?.notes || "");
+    setReviewRating(book.rating || 0);
+    setReviewNotes(book.notes || "");
   }, [book]);
 
-  const rating = book.review?.rating || 0;
+  const rating = book.rating || 0;
   const isReading = book.status === "reading";
   const isRead = book.status === "read";
+
   const progressPercent = book.totalPages
     ? Math.min(100, Math.round((currentPage / book.totalPages) * 100))
     : 0;
+
   const isComplete = progressPercent >= 100;
 
   const handleUpdateProgress = () => {
     if (currentPage >= 0 && currentPage <= (book.totalPages || 0)) {
       onUpdateProgress && onUpdateProgress(book.id, currentPage);
-      if (book.totalPages && currentPage >= book.totalPages)
+
+      // si llego o paso la última página, abrimos reseña
+      if (book.totalPages && currentPage >= book.totalPages) {
         setIsReviewing(true);
+      }
     }
   };
 
   const handleSubmitReview = () => {
     if (reviewRating > 0) {
       onAddReview &&
-        onAddReview(book.id, { rating: reviewRating, notes: reviewNotes });
+        onAddReview(book.id, {
+          rating: reviewRating,
+          notes: reviewNotes,
+        });
       setIsReviewing(false);
       alert("¡Reseña guardada!");
     }
@@ -56,6 +66,7 @@ export default function DetailPanel({
         className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* HEADER */}
         <div className="mb-4 flex items-start gap-4">
           <Cover
             title={book.title}
@@ -64,13 +75,14 @@ export default function DetailPanel({
             book={book}
           />
           <div className="flex-1">
-            ...
             <h2 className="text-xl font-semibold text-gray-800">
               {book.title}
             </h2>
             {book.author && (
               <p className="text-sm text-gray-500 mt-1">{book.author}</p>
             )}
+
+            {/* Rating solo si está leído */}
             {isRead && (
               <div className="mt-2 flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -83,10 +95,13 @@ export default function DetailPanel({
                     ★
                   </span>
                 ))}
-                <span className="ml-2 text-sm text-gray-600">{rating}/5</span>
+                <span className="ml-2 text-sm text-gray-600">
+                  {rating}/5
+                </span>
               </div>
             )}
           </div>
+
           <button
             onClick={onClose}
             className="rounded-full bg-gray-100 p-2 hover:bg-gray-200 transition"
@@ -96,6 +111,7 @@ export default function DetailPanel({
           </button>
         </div>
 
+        {/* 🔹 MODAL DE ACTUALIZAR PROGRESO (el que querías) */}
         {isReading && book.totalPages && (
           <div className="mb-4 rounded-lg border border-stone-200 bg-stone-50 p-4">
             <h3 className="mb-3 text-sm font-semibold text-gray-700">
@@ -130,17 +146,19 @@ export default function DetailPanel({
           </div>
         )}
 
+        {/* Botón para abrir reseña cuando se completa la lectura */}
         {isReading && isComplete && !isReviewing && (
           <div className="mb-4">
             <button
               onClick={() => setIsReviewing(true)}
               className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-700 transition"
             >
-               Escribir reseña
+              Escribir reseña
             </button>
           </div>
         )}
 
+        {/* Formulario de reseña (crear o editar) */}
         {isReviewing && (
           <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
             <h3 className="mb-3 text-sm font-semibold text-gray-700">
@@ -155,6 +173,7 @@ export default function DetailPanel({
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
+                      type="button"
                       onClick={() => setReviewRating(star)}
                       className="text-2xl transition hover:scale-110"
                     >
@@ -192,6 +211,7 @@ export default function DetailPanel({
                   Guardar reseña
                 </button>
                 <button
+                  type="button"
                   onClick={() => setIsReviewing(false)}
                   className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 transition"
                 >
@@ -202,17 +222,19 @@ export default function DetailPanel({
           </div>
         )}
 
-        {isRead && book.review && (
+        {/* Reseña ya guardada (modo leído) */}
+        {isRead && (book.notes || rating) && !isReviewing && (
           <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
             <h3 className="mb-2 text-sm font-semibold text-gray-700">
               Mi reseña
             </h3>
             <p className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-              {book.review.notes || "Sin comentarios."}
+              {book.notes || "Sin comentarios."}
             </p>
           </div>
         )}
 
+        {/* Footer */}
         <div className="mt-6 flex items-center justify-end">
           <button
             onClick={onClose}

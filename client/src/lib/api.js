@@ -145,6 +145,27 @@ export async function apiDeleteBook(id) {
     headers: authHeaders(),
   });
 }
+
+// POST: marcar libro como leído + reseña
+export async function apiCompleteBook(id, { rating, notes }) {
+  return request(`/books/${id}/complete`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ rating, notes }),
+  });
+}
+
+/* ---------------------------
+         REVIEWS
+---------------------------- */
+
+export async function apiGetReviews() {
+  return request("/reviews", {
+    headers: authHeaders(),
+  });
+}
+
+
 /* ---------------------------
          GOALS
 ---------------------------- */

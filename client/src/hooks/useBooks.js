@@ -6,6 +6,8 @@ import {
   apiCreateBook,
   apiUpdateBook,
   apiSearchBooks,
+  apiCompleteBook,
+  apiGetReviews
 } from "../lib/api";
 
 export function useBooks() {
@@ -27,22 +29,36 @@ export function useBooks() {
 
   // Obtener todos los libros del usuario desde el backend
   async function fetchUserBooks() {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await apiGetBooks();
+      // Libros y reseñas en paralelo
+      const [booksData, reviewsData] = await Promise.all([
+        apiGetBooks(),
+        apiGetReviews(),
+      ]);
 
-      const transformedBooks = data.map((item) => {
+      const reviewsByBookId = new Map();
+
+      // reviewsData viene ordenado por created_at DESC (la más nueva primero)
+      for (const r of reviewsData) {
+        if (!reviewsByBookId.has(r.book_id)) {
+          // 👇 solo guardamos la PRIMERA (la más nueva)
+          reviewsByBookId.set(r.book_id, r);
+        }
+      }
+
+      const transformedBooks = booksData.map((item) => {
         const book = item.book || {};
+        const review = reviewsByBookId.get(book.id);
 
         const totalPages = item.total_pages || book.page_count || 0;
-
         const progressPercent =
           totalPages > 0
             ? Math.round((item.current_page / totalPages) * 100)
             : 0;
 
         return {
-          id: item.id, // id de user_books
+          id: item.id,
           bookId: book.id,
           title: book.title,
           author: book.author,
@@ -53,9 +69,8 @@ export function useBooks() {
           progressPercent,
           startedAt: item.started_at,
           finishedAt: item.finished_at,
-          review: null, // más adelante conectamos con reviews
-          color: randomColor(book.title || ""),
-          accent: randomAccent(book.title || ""),
+          rating: review ? review.rating : null,
+          notes: review ? review.notes : "",
         };
       });
 
@@ -66,6 +81,7 @@ export function useBooks() {
       setLoading(false);
     }
   }
+
 
   // 👉 Agregar libro desde Google Books como "en lectura"
   async function handleAddReading(googleBook) {
@@ -116,39 +132,50 @@ export function useBooks() {
     }
   }
 
-  // Actualizar progreso de lectura
-  async function handleUpdateProgress(userBookId, currentPage) {
-    try {
-      const book = books.find((b) => b.id === userBookId);
-      if (!book) return;
+async function handleUpdateProgress(userBookId, currentPage) {
+  try {
+    const book = books.find((b) => b.id === userBookId);
+    if (!book) return;
 
-      const updates = {
-        current_page: currentPage,
-      };
+    const total = book.totalPages || 0;
+    const clampedPage =
+      total > 0 ? Math.min(Math.max(currentPage, 0), total) : currentPage;
 
-      if (book.totalPages > 0 && currentPage >= book.totalPages) {
-        updates.status = "finished";
-        updates.finished_at = new Date().toISOString();
-      }
+    // actualizar en Supabase
+    await apiUpdateBook(userBookId, {
+      current_page: clampedPage,
+    });
 
-      await apiUpdateBook(userBookId, updates);
-      await fetchUserBooks();
-    } catch (error) {
-      console.error("Error updating progress:", error);
-      throw error;
-    }
+    // actualizar en memoria para que se vea al instante
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id !== userBookId) return b;
+        const t = b.totalPages || 0;
+        const progressPercent =
+          t > 0 ? Math.round((clampedPage / t) * 100) : 0;
+
+        return {
+          ...b,
+          currentPage: clampedPage,
+          progressPercent,
+        };
+      })
+    );
+  } catch (error) {
+    console.error("Error updating progress:", error);
+    throw error;
   }
-
-  // Marcar libro como terminado (luego conectamos con reviews)
+}
+  // Agregar reseña (rating + notes) a un libro completado
   async function handleAddReview(userBookId, reviewData) {
     try {
-      const updates = {
-        status: "finished",
-        finished_at: new Date().toISOString(),
-        // TODO: guardar rating/notes cuando tengamos /api/reviews
-      };
+      const { rating, notes } = reviewData || {};
 
-      await apiUpdateBook(userBookId, updates);
+      await apiCompleteBook(userBookId, {
+        rating,
+        notes,
+      });
+
       await fetchUserBooks();
     } catch (error) {
       console.error("Error adding review:", error);
