@@ -81,6 +81,30 @@ export default function DetailPanel({
             {book.author && (
               <p className="text-sm text-gray-500 mt-1">{book.author}</p>
             )}
+            {/* Fechas de lectura */}
+            <div className="mt-1 flex flex-wrap gap-4 text-[11px] text-gray-500">
+              {book.startedAt && (
+                <span>
+                  Inicio:{" "}
+                  {new Date(book.startedAt).toLocaleDateString("es-AR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              )}
+
+              {book.finishedAt && (
+                <span>
+                  Finalizado:{" "}
+                  {new Date(book.finishedAt).toLocaleDateString("es-AR", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              )}
+            </div>
 
             {/* Rating solo si está leído */}
             {isRead && (
@@ -95,9 +119,7 @@ export default function DetailPanel({
                     ★
                   </span>
                 ))}
-                <span className="ml-2 text-sm text-gray-600">
-                  {rating}/5
-                </span>
+                <span className="ml-2 text-sm text-gray-600">{rating}/5</span>
               </div>
             )}
           </div>
@@ -231,6 +253,20 @@ export default function DetailPanel({
             <p className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
               {book.notes || "Sin comentarios."}
             </p>
+
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReviewing(true);
+                  setReviewRating(rating || 0);
+                  setReviewNotes(book.notes || "");
+                }}
+                className="text-xs font-medium text-stone-700 underline hover:text-stone-900"
+              >
+                Editar reseña
+              </button>
+            </div>
           </div>
         )}
 
