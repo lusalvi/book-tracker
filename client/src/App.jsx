@@ -104,7 +104,7 @@ function AppShell() {
       </header>
 
       <main className="mx-auto max-w-6xl">
-        {page === "home" && <HomePage books={books} onOpen={setOpen} />}
+        {page === "home" && <HomePage onOpen={setOpen} />}
         {page === "search" && <SearchPage onAddReading={handleAddReading} />}
         {page === "goals" && <GoalsPage books={books} />}
       </main>

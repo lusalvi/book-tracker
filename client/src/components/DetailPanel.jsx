@@ -11,7 +11,9 @@ export default function DetailPanel({
   if (!book) return null;
 
   // Estado local
-  const [currentPage, setCurrentPage] = useState(book.currentPage || 0);
+  const [currentPage, setCurrentPage] = useState(
+    book.currentPage != null ? String(book.currentPage) : ""
+  );
   const [totalPages, setTotalPages] = useState(book.totalPages || 0);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewRating, setReviewRating] = useState(book.rating || 0);
@@ -19,36 +21,47 @@ export default function DetailPanel({
 
   // Cada vez que cambia de libro, reseteamos todo
   useEffect(() => {
-    setCurrentPage(book.currentPage || 0);
+    if (!book) return;
+
+    setCurrentPage(
+      book.currentPage != null ? String(book.currentPage) : ""
+    );
     setTotalPages(book.totalPages || 0);
     setIsReviewing(false);
     setReviewRating(book.rating || 0);
     setReviewNotes(book.notes || "");
   }, [book]);
 
+
   const rating = book.rating || 0;
   const isReading = book.status === "reading";
   const isRead = book.status === "read";
 
+  // currentPage como número seguro
+  const currentPageNumber =
+    currentPage === "" ? 0 : Number(currentPage || 0);
+
   const progressPercent = totalPages
-    ? Math.min(100, Math.round((currentPage / totalPages) * 100))
+    ? Math.min(100, Math.round((currentPageNumber / totalPages) * 100))
     : 0;
 
   const isComplete = progressPercent >= 100;
 
   const handleUpdateProgress = () => {
     const safeTotal = totalPages && totalPages > 0 ? totalPages : null;
+    const page = currentPageNumber;
 
     // Si hay total, validamos contra eso; si no, solo que sea >= 0
-    if (currentPage >= 0 && (!safeTotal || currentPage <= safeTotal)) {
-      onUpdateProgress && onUpdateProgress(book.id, currentPage, safeTotal);
+    if (page >= 0 && (!safeTotal || page <= safeTotal)) {
+      onUpdateProgress && onUpdateProgress(book.id, page, safeTotal);
 
       // Si hay total y llegamos al final, abrir reseña
-      if (safeTotal && currentPage >= safeTotal) {
+      if (safeTotal && page >= safeTotal) {
         setIsReviewing(true);
       }
     }
   };
+
 
   const handleSubmitReview = () => {
     if (reviewRating > 0) {
@@ -117,9 +130,8 @@ export default function DetailPanel({
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span
                     key={star}
-                    className={`text-xl ${
-                      star <= rating ? "text-yellow-400" : "text-gray-300"
-                    }`}
+                    className={`text-xl ${star <= rating ? "text-yellow-400" : "text-gray-300"
+                      }`}
                   >
                     ★
                   </span>
@@ -170,12 +182,24 @@ export default function DetailPanel({
                     min="0"
                     max={totalPages || undefined}
                     value={currentPage}
-                    onChange={(e) =>
-                      setCurrentPage(Number(e.target.value) || 0)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      // Permitir borrar todo
+                      if (value === "") {
+                        setCurrentPage("");
+                        return;
+                      }
+
+                      // Solo aceptamos números positivos (sin signos, sin letras)
+                      if (/^\d+$/.test(value)) {
+                        setCurrentPage(value);
+                      }
+                    }}
                     className="w-24 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-900"
                     placeholder="Página"
                   />
+
                 </div>
 
                 {/* Total de páginas (editable) */}

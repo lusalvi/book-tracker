@@ -7,7 +7,8 @@ import {
   apiUpdateBook,
   apiSearchBooks,
   apiCompleteBook,
-  apiGetReviews
+  apiGetReviews,
+  apiDeleteBook,
 } from "../lib/api";
 
 export function useBooks() {
@@ -183,6 +184,24 @@ export function useBooks() {
       throw error;
     }
   }
+  async function handleDeleteBook(userBookId) {
+    try {
+      await apiDeleteBook(userBookId);
+
+      // Volvemos a pedir los libros al backend para que TODO se actualice
+      await fetchUserBooks();
+
+      // Si justo estaba abierto en el modal, lo cerramos
+      if (open && open.id === userBookId) {
+        setOpen(null);
+      }
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      alert("No se pudo eliminar el libro. Probá de nuevo.");
+      throw error;
+    }
+  }
+
 
   // Libros en curso (status = "reading")
   const readingBooks = books
@@ -215,6 +234,7 @@ export function useBooks() {
     handleAddReading,
     handleUpdateProgress,
     handleAddReview,
+    handleDeleteBook,
     refetch: fetchUserBooks,
     searchBooks: apiSearchBooks,
     readingBooks,
