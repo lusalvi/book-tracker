@@ -384,11 +384,11 @@ export default function HomePage({ onOpen }) {
               />
               <button
                 onClick={() => setMonthModal({ key, open: true })}
-                className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded-full border text-stone-700 hover:bg-stone-50"
+                className="ml-3 inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border text-stone-700 hover:bg-stone-50"
                 aria-label={`Ver todo ${formatMonthLabel(key)}`}
                 title={`Ver todo ${formatMonthLabel(key)}`}
               >
-                +
+                <span className="text-lg leading-none">+</span>
               </button>
             </div>
 
