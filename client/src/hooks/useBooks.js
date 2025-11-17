@@ -40,7 +40,7 @@ export function useBooks() {
 
       const reviewsByBookId = new Map();
 
-      // reviewsData viene ordenado por created_at DESC (la más nueva primero)
+      // reviewsData viene ordenado por created_at (la más nueva primero)
       for (const r of reviewsData) {
         if (!reviewsByBookId.has(r.book_id)) {
           reviewsByBookId.set(r.book_id, r);
@@ -119,13 +119,13 @@ export function useBooks() {
         // status/fechas/progreso los maneja el backend
       };
 
-      console.log("📦 Payload para POST /books:", payload);
+      console.log(" Payload para POST /books:", payload);
 
       await apiCreateBook(payload);
       await fetchUserBooks();
       setPage("home");
     } catch (error) {
-      console.error("❌ Error adding book:", error);
+      console.error(" Error adding book:", error);
       alert(error.message || "No se pudo agregar el libro. Mirá la consola.");
       throw error;
     }
@@ -164,7 +164,6 @@ export function useBooks() {
       throw error;
     }
   }
-
 
   // Agregar reseña (rating + notes) a un libro completado
   async function handleAddReview(userBookId, reviewData) {
