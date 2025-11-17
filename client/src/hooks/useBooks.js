@@ -43,7 +43,6 @@ export function useBooks() {
       // reviewsData viene ordenado por created_at DESC (la más nueva primero)
       for (const r of reviewsData) {
         if (!reviewsByBookId.has(r.book_id)) {
-          // 👇 solo guardamos la PRIMERA (la más nueva)
           reviewsByBookId.set(r.book_id, r);
         }
       }
@@ -84,12 +83,11 @@ export function useBooks() {
   }
 
 
-  // 👉 Agregar libro desde Google Books como "en lectura"
+  // Agregar libro desde Google Books como "en lectura"
   async function handleAddReading(googleBook) {
     try {
       console.log("handleAddReading - libro elegido:", googleBook);
 
-      // MUY IMPORTANTE: Google Books usa volumeInfo, no volume_info
       const volume = googleBook.volumeInfo || {};
 
       let title = "";

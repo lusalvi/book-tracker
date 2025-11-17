@@ -56,7 +56,6 @@ router.get("/", async (req, res) => {
  * body: {
  *   google_volume_id, title, author, cover_url, page_count
  * }
- * Crea (si hace falta) el libro en `books` y la relación en `user_books`
  */
 router.post("/", async (req, res) => {
   const userId = req.user.id;
@@ -268,7 +267,7 @@ router.post("/:id/complete", async (req, res) => {
     const { error: updateError } = await supabase
       .from("user_books")
       .update({
-        status: "read",          // 👈 estado final que van a usar metas y estanterías
+        status: "read",          //  estado final que van a usar metas y estanterías
         finished_at: finishedAt, // fecha de finalización
         current_page: userBook.total_pages, // lo dejamos al 100%
       })
@@ -291,7 +290,7 @@ router.post("/:id/complete", async (req, res) => {
           notes: notes || null,
         },
         {
-          onConflict: "user_id,book_id", // 👈 usa tu índice único
+          onConflict: "user_id,book_id",
         }
       );
 

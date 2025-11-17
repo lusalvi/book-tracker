@@ -86,7 +86,7 @@ router.put("/", async (req, res) => {
     let yearlyGoal = null;
     let monthlyGoal = null;
 
-    // 👉 Guardar/editar meta anual
+    //  Guardar/editar meta anual
     if (typeof annualTarget === "number") {
       const { data, error } = await supabase
         .from("reading_goals_yearly")

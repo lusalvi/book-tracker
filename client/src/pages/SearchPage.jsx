@@ -111,7 +111,7 @@ export default function SearchPage({ onAddReading }) {
                 <div className="text-xs text-stone-500 mt-1">{author}</div>
               </div>
 
-              {/* 👇 IMPORTANTE: mandar el item completo de Google Books */}
+              {/* mandar el item completo de Google Books */}
               <button
                 onClick={() => onAddReading(it)}
                 className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-medium hover:bg-stone-100 transition whitespace-nowrap"
