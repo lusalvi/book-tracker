@@ -19,14 +19,14 @@ export default function AuthCallbackPage() {
         let type = searchParams.get("type");
         
         console.log('🔍 Parámetros recibidos:', {
-          accessToken: accessToken ? 'Sí ✅' : 'No ❌',
-          tokenHash: tokenHash ? 'Sí ✅' : 'No ❌',
+          accessToken: accessToken ? 'Sí' : 'No',
+          tokenHash: tokenHash ? 'Sí' : 'No',
           type: type || 'ninguno'
         });
 
         // CASO 1: Ya tenemos el access_token
         if (accessToken) {
-          console.log('✅ Token encontrado directamente');
+          console.log('Token encontrado directamente');
           localStorage.setItem("book_token", accessToken);
           if (refreshToken) {
             localStorage.setItem("book_refresh_token", refreshToken);
@@ -42,9 +42,9 @@ export default function AuthCallbackPage() {
 
         // CASO 2: Tenemos token_hash
         if (tokenHash && type) {
-          console.log('🔄 Verificando email con backend...');
+          console.log('Verificando email con backend...');
           const data = await apiVerifyEmail(tokenHash, type);
-          console.log('✅ Email verificado:', data);
+          console.log('Email verificado:', data);
           setSuccess(true);
           
           // Recargar la página para que useAuth lea el localStorage
@@ -55,11 +55,11 @@ export default function AuthCallbackPage() {
         }
 
         // No hay parámetros
-        console.warn('⚠️ No se encontraron parámetros');
+        console.warn('No se encontraron parámetros');
         throw new Error('No se encontraron parámetros de verificación');
 
       } catch (err) {
-        console.error('❌ Error en callback:', err);
+        console.error('Error en callback:', err);
         
         const errorMsg = err.message || '';
         

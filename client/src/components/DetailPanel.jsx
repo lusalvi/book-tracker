@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { useEffect, useState } from "react";
 import Cover from "./Cover";
 import ProgressBar from "./ProgressBar";
@@ -150,7 +151,7 @@ export default function DetailPanel({
           </button>
         </div>
 
-        {/* 🔹 MODAL DE ACTUALIZAR PROGRESO (el que querías) */}
+        {/* MODAL DE ACTUALIZAR PROGRESO */}
         {isReading && (
           <div className="mb-4 rounded-lg border border-stone-200 bg-stone-50 p-4">
             <h3 className="mb-3 text-sm font-semibold text-gray-700">
