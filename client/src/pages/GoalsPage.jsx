@@ -309,7 +309,7 @@ export default function GoalsPage({ books }) {
             {!annualTarget || annualTarget <= 0
               ? "Todavía no definiste tu meta anual."
               : readThisYear.length >= annualTarget
-                ? "¡Felicitaciones! Cumpliste tu meta anual 🎉"
+                ? "¡Felicitaciones! Cumpliste tu meta anual"
                 : `Te faltan ${annualTarget - readThisYear.length
                 } libros para cumplir tu meta`}
           </p>
@@ -344,7 +344,7 @@ export default function GoalsPage({ books }) {
             {!monthlyTarget || monthlyTarget <= 0
               ? "Todavía no definiste tu meta mensual."
               : readThisMonth.length >= monthlyTarget
-                ? "¡Excelente! Cumpliste tu meta mensual 🎉"
+                ? "¡Excelente! Cumpliste tu meta mensual "
                 : `Te faltan ${monthlyTarget - readThisMonth.length
                 } libros para cumplir tu meta`}
           </p>
