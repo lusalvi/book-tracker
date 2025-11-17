@@ -22,7 +22,7 @@ app.use(
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('Book Journaling API ✅');
+  res.send('Book Journaling API ');
 });
 
 app.use('/api/auth', authRoutes);

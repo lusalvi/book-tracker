@@ -40,13 +40,13 @@ router.get("/", async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("❌ Error GET /books:", error);
+      console.error("Error GET /books:", error);
       return res.status(500).json({ error: error.message });
     }
 
     return res.json(data);
   } catch (err) {
-    console.error("❌ Error general GET /books:", err);
+    console.error("Error general GET /books:", err);
     return res.status(500).json({ error: "Error interno" });
   }
 });
@@ -198,7 +198,7 @@ router.put("/:id", async (req, res) => {
     .single();
 
   if (error) {
-    console.error("❌ Error PUT /books/:id:", error);
+    console.error(" Error PUT /books/:id:", error);
     return res.status(500).json({ error: error.message });
   }
 
@@ -224,7 +224,7 @@ router.delete("/:id", async (req, res) => {
     .eq("user_id", userId);
 
   if (error) {
-    console.error("❌ Error DELETE /books/:id:", error);
+    console.error(" Error DELETE /books/:id:", error);
     return res.status(500).json({ error: error.message });
   }
 
@@ -255,7 +255,7 @@ router.post("/:id/complete", async (req, res) => {
       .single();
 
     if (userBookError || !userBook) {
-      console.error("❌ Error buscando user_book:", userBookError);
+      console.error(" Error buscando user_book:", userBookError);
       return res
         .status(404)
         .json({ error: "Libro no encontrado para este usuario" });
@@ -275,7 +275,7 @@ router.post("/:id/complete", async (req, res) => {
       .eq("user_id", userId);
 
     if (updateError) {
-      console.error("❌ Error marcando como leído:", updateError);
+      console.error("Error marcando como leído:", updateError);
       return res.status(500).json({ error: "No se pudo marcar como leído" });
     }
 
@@ -295,7 +295,7 @@ router.post("/:id/complete", async (req, res) => {
       );
 
     if (reviewError) {
-      console.error("❌ Error insertando reseña:", reviewError);
+      console.error(" Error insertando reseña:", reviewError);
       return res.status(500).json({ error: "No se pudo guardar la reseña" });
     }
 
@@ -303,7 +303,7 @@ router.post("/:id/complete", async (req, res) => {
       message: "Libro completado con reseña",
     });
   } catch (err) {
-    console.error("❌ Error POST /books/:id/complete:", err);
+    console.error(" Error POST /books/:id/complete:", err);
     return res.status(500).json({ error: "Error interno" });
   }
 });

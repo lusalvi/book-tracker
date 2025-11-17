@@ -22,13 +22,13 @@ router.get("/", async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("❌ Error leyendo reviews:", error);
+      console.error(" Error leyendo reviews:", error);
       return res.status(500).json({ error: "Error leyendo reseñas" });
     }
 
     return res.json(data);
   } catch (err) {
-    console.error("❌ Error general GET /reviews:", err);
+    console.error(" Error general GET /reviews:", err);
     return res.status(500).json({ error: "Error interno" });
   }
 });

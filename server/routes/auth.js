@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { supabase } = require("../config/supabase");
 
-/* HELPER */
+
 // Helper para asegurar que el perfil en public.profiles esté creado/actualizado
 async function ensureProfileForUser(user, extra = {}) {
   if (!user) return;
@@ -75,7 +75,7 @@ router.post("/register", async (req, res) => {
   try {
     await ensureProfileForUser(user, { nombre, apellido });
   } catch (e) {
-    console.error("❌ Error creando perfil:", e);
+    console.error(" Error creando perfil:", e);
   }
 
   return res.status(201).json({
@@ -100,7 +100,7 @@ router.post("/verify-email", async (req, res) => {
     });
 
     if (error) {
-      console.error("❌ Error verificando email:", error.message);
+      console.error("Error verificando email:", error.message);
       return res.status(401).json({ error: error.message });
     }
 
@@ -114,7 +114,7 @@ router.post("/verify-email", async (req, res) => {
       refresh_token: data.session.refresh_token,
     });
   } catch (e) {
-    console.error("❌ Excepción en verify-email:", e);
+    console.error(" Excepción en verify-email:", e);
     return res.status(500).json({ error: "Error en el servidor" });
   }
 });
@@ -168,7 +168,7 @@ router.post("/login/google", async (req, res) => {
     });
 
     if (error) {
-      console.error("❌ Error de Supabase:", error.message);
+      console.error(" Error de Supabase:", error.message);
       return res.status(401).json({ error: error.message });
     }
 
@@ -182,7 +182,7 @@ router.post("/login/google", async (req, res) => {
       refresh_token: data.session.refresh_token,
     });
   } catch (e) {
-    console.error("❌ Excepción en login/google:", e);
+    console.error(" Excepción en login/google:", e);
     return res.status(500).json({ error: "Error en el servidor" });
   }
 });
