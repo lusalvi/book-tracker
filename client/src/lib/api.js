@@ -1,5 +1,6 @@
 // client/src/lib/api.js
 
+/* funciones que usa el frontend para hablar con el backend */
 const API_URL = import.meta.env.VITE_API_URL;
 
 /* ---------------------------
@@ -35,7 +36,7 @@ async function request(path, options = {}) {
 
   return data;
 }
-
+/* funciones ordenadas en secciones */
 /* ---------------------------
          AUTH
 ---------------------------- */

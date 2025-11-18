@@ -1,4 +1,6 @@
 // src/App.jsx
+
+/* armamos la estructura de la aplicación */
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
@@ -14,6 +16,7 @@ import { useBooks } from "./hooks/useBooks.js";
 
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 
+/* si el usuario está logueado ve la app, sino lo manda al login */
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
 
@@ -24,7 +27,7 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />;
 }
 
-/** Shell autenticado: toda tu UI principal */
+/** parte visual de la app */
 function AppShell() {
   const {
     books,
@@ -55,6 +58,7 @@ function AppShell() {
     );
   }
 
+  /* el header con el saludo del usuario */
   return (
     <div className="min-h-screen w-full bg-stone-50 px-4 py-8 md:px-8">
       <header className="mx-auto mb-6 max-w-6xl">
@@ -136,12 +140,14 @@ function AppShell() {
         </div>
       </header>
 
+      {/* las tres páginas */}
       <main className="mx-auto max-w-6xl">
         {page === "home" && <HomePage onOpen={setOpen} />}
         {page === "search" && <SearchPage onAddReading={handleAddReading} />}
         {page === "goals" && <GoalsPage books={books} />}
       </main>
 
+      {/* despliega panel cuando seleccionamos un libro */}
       <DetailPanel
         book={open}
         onClose={() => setOpen(null)}
@@ -156,6 +162,7 @@ function AppShell() {
   );
 }
 
+/* rutas */
 export default function App() {
   return (
     <Routes>

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // client/src/hooks/useAuth.js
 import { createContext, useContext, useEffect, useState } from "react";
 import {

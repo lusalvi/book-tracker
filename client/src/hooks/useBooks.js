@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // client/src/hooks/useBooks.js
 import { useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
